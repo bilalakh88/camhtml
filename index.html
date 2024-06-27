@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مسح نص رقم السيارة</title>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        #reader {
+            width: 300px;
+            margin: auto;
+        }
+        textarea {
+            width: 80%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>مسح نص رقم السيارة</h1>
+    <button id="start-button">فتح الكاميرا</button>
+    <div id="reader"></div>
+    <textarea id="scanned-text" rows="4" placeholder="النص الممسوح يظهر هنا..."></textarea>
+
+    <script>
+        document.getElementById('start-button').addEventListener('click', function() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        stream.getTracks().forEach(track => track.stop()); // أغلاق الكاميرا بعد التحقق من الأذونات
+                        startScanner();
+                    })
+                    .catch(function(error) {
+                        console.error("فشل في الوصول إلى الكاميرا", error);
+                        alert("يرجى السماح بالوصول إلى الكاميرا. إذا كنت قد رفضت الإذن من قبل، يرجى إعادة تمكينه من إعدادات المتصفح.");
+                    });
+            } else {
+                alert("المتصفح الخاص بك لا يدعم الوصول إلى الكاميرا");
+            }
+        });
+
+        function startScanner() {
+            let html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                {
+                    fps: 10,    // عدد الإطارات في الثانية
+                    qrbox: { width: 250, height: 250 }  // حجم الصندوق للمسح
+                },
+                qrCodeMessage => {
+                    document.getElementById('scanned-text').value = qrCodeMessage;
+                    html5QrCode.stop().then(ignore => {
+                        // يتم إيقاف الكاميرا بعد المسح
+                    }).catch(err => {
+                        // التعامل مع خطأ الإيقاف
+                        console.error("فشل في إيقاف الكاميرا", err);
+                    });
+                },
+                errorMessage => {
+                    // التعامل مع أخطاء المسح
+                    console.warn("خطأ في المسح:", errorMessage);
+                }
+            ).catch(err => {
+                // التعامل مع خطأ البدء
+                console.error("فشل في بدء المسح", err);
+            });
+        }
+    </script>
+</body>
+</html>
